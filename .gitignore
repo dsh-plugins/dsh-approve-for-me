@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.idea/
+playground/
+
+# Local debugging artifacts
+_debug_dsh.py
+_session-debug.jsonl
