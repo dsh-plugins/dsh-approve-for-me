@@ -1,5 +1,11 @@
 # dsh-plugin-approve-for-me
 
+> [!WARNING]
+> 自动审查模型并非完美，可能出现误判或遗漏。请勿将其视为安全保证；对于高风险、破坏性或涉及敏感数据的操作，应保留人工审查和最小权限控制。
+
+> [!IMPORTANT]
+> 此插件需要搭配前端插件 [dsh-client-plugin-approve-for-me](https://github.com/ZhuRuoLing/dsh-client-plugin-approve-for-me) 使用，才能提供完整的界面端功能。
+
 DSH（DeepSeek Harness）插件：提供类似 Codex 的运行命令自动审核功能，并在沙箱权限选项中新增
 **“替我同意 / Approve For Me”**。
 
