@@ -241,14 +241,15 @@ test("review mode: lightweight model approves and denies", async () => {
   );
   assert.deepEqual(agent.session.appended, [
     {
-      type: "approve-for-me/reviewed",
+      type: "hook/result",
       data: {
+        hook: "approve-for-me/review",
         approvalId: "approval-c1",
         riskLevel: "low",
         userAuthorization: "medium",
         rationale: "benign setup"
       },
-      opts: { ignorable: true }
+      opts: undefined
     }
   ]);
 
@@ -410,8 +411,8 @@ test("Strict Mode reviews every tool call before it executes and includes the ex
   assert.deepEqual(
     agent.session.appended.map((entry) => [entry.type, entry.data.outcome]),
     [
-      ["approve-for-me/strict-review-started", undefined],
-      ["approve-for-me/strict-reviewed", "allowed"]
+      ["hook/invoked", undefined],
+      ["hook/result", "allowed"]
     ]
   );
 });
@@ -558,7 +559,8 @@ test("review mode: queues only the terminal verdict when review notices are enab
   // inbox rendering is delayed and can leave a stale "reviewing" row in the UI.
   assert.equal(agent.injected.length, 1);
   assert.equal(agent.session.appended.length, 1); // durable, log-only reviewer rationale
-  assert.equal(agent.session.appended[0].type, "approve-for-me/reviewed");
+  assert.equal(agent.session.appended[0].type, "hook/result");
+  assert.equal(agent.session.appended[0].data.hook, "approve-for-me/review");
   assert.equal(agent.session.appended[0].data.rationale, "benign setup");
   // Verdict notice: collapsed-row summary directly readable (form: notice).
   assert.equal(agent.injected[0].source.kind, "plugin");

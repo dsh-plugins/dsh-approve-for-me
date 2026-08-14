@@ -40,7 +40,7 @@ DSH（DeepSeek Harness）插件：提供类似 Codex 的运行命令自动审核
   - 输出契约：**严格 JSON** `{ risk_level, user_authorization, outcome, rationale }`（低风险可直接 `{"outcome":"allow"}`），容忍少量外层散文，非 JSON 视为失败。
 - **fail-closed**：审查超时（默认 30s）、LLM 调用失败、输出无法解析 → 默认**拒绝**（可配 `reviewFallback: "ask"` 转交人工）；可重试 `reviewMaxAttempts` 次。
 - **拒绝熔断**（移植 codex 的 guardian circuit breaker）：同一 turn 内连续 `reviewCircuitMaxConsecutive`（默认 3）次拒绝、或窗口内 `reviewCircuitMaxRecent`（默认 10）次拒绝后，把控制权交还人类（转交 UI 弹窗），避免审查模型把整轮堵死；turn 切换自动重置。
-- **UI 状态与裁决**：普通模式的进行中和完成状态由原生 `approval/asked` / `approval/decided` 事件驱动，并以 log-only、`ignorable` 的 `approve-for-me/reviewed` 写入审查意见。Strict Mode 使用同样可重放的 `approve-for-me/strict-review-started` / `approve-for-me/strict-reviewed` 事件，在对应工具调用旁显示审查中与结论；拒绝时工具体不会执行。所有这些事件都不进入模型上下文。默认不额外注入消息；可用 `reviewNotify: true` 在下一模型步骤显示普通权限审查的最终裁决。
+- **UI 状态与裁决**：普通模式的进行中和完成状态由原生 `approval/asked` / `approval/decided` 事件驱动，并以 log-only 的 `hook/result` 写入审查意见。Strict Mode 使用 `hook/invoked` / `hook/result` 在对应工具调用旁显示审查中与结论；拒绝时工具体不会执行。所有这些事件都不进入模型上下文，并且不依赖无法注册的插件自定义事件，因此不会阻断会话重载。默认不额外注入消息；可用 `reviewNotify: true` 在下一模型步骤显示普通权限审查的最终裁决。
 - 审查模型：`reviewProvider`/`reviewModel` 未配置时，折叠会话日志的 `request/context` 事件继承会话当前模型路由。
 
 ### 3. 沙箱权限选项新增 `approve-for-me`（替我同意 / Approve For Me）
