@@ -1,10 +1,10 @@
-# dsh-plugin-approve-for-me
+# @dsh-plugin/dsh-approve-for-me
 
 > [!WARNING]
 > 自动审查模型并非完美，可能出现误判或遗漏。请勿将其视为安全保证；对于高风险、破坏性或涉及敏感数据的操作，应保留人工审查和最小权限控制。
 
 > [!IMPORTANT]
-> 此插件需要搭配前端插件 [dsh-client-plugin-approve-for-me](https://github.com/ZhuRuoLing/dsh-client-plugin-approve-for-me) 使用，才能提供完整的界面端功能。
+> 此插件需要搭配前端插件 [@dsh-plugin/dsh-approve-for-me-client](https://github.com/dsh-plugins/dsh-approve-for-me-client) 使用，才能提供完整的界面端功能。
 
 DSH（DeepSeek Harness）插件：提供类似 Codex 的运行命令自动审核功能，并在沙箱权限选项中新增
 **“替我同意 / Approve For Me”**。
@@ -124,9 +124,9 @@ approve-for-me:
 
 ```sh
 # 在 dsh profile 目录（例如 web profile）中
-dsh plugin --profile web add file:C:/Users/jkl-9/IdeaProjects/dsh-command-approve-for-me
+dsh plugin --profile web add file:C:/Users/jkl-9/IdeaProjects/dsh-approve-for-me
 # 或从本目录用相对路径
-dsh plugin --profile web add file:../dsh-command-approve-for-me
+dsh plugin --profile web add file:../dsh-approve-for-me
 ```
 
 然后在 `cordis.patch.yml` 启用（见上）。重启 dsh web 后生效。

@@ -1,11 +1,13 @@
 {
-  "name": "dsh-plugin-approve-for-me",
+  "name": "@dsh-plugin/dsh-approve-for-me",
   "version": "0.1.0",
   "description": "DSH plugin: codex-like auto-approval for run commands — rules, full-auto, or a lightweight reviewer model (codex guardian style) — plus an \"Approve For Me\" (替我同意) option in the sandbox permission choices.",
   "type": "module",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
     "lib",
+    "src",
     "README.md"
   ],
   "license": "MIT",
@@ -13,6 +15,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "test": "node --test test/"
   },
   "keywords": [
@@ -23,6 +26,10 @@
     "approval",
     "sandbox"
   ],
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.0"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",

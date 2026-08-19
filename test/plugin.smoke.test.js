@@ -108,7 +108,7 @@ function sessionEvents(callId, command) {
 }
 
 test("plugin contract exports are present", () => {
-  assert.equal(name, "approve-for-me");
+  assert.equal(name, "@dsh-plugin/dsh-approve-for-me");
   assert.deepEqual(inject, ["tools", "systemPrompt"]);
   assert.equal(typeof apply, "function");
   assert.equal(typeof Config, "function");
