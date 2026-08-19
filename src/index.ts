@@ -82,6 +82,7 @@ import {
   renderReviewUserPrompt,
   rewriteApproveForMe,
 } from "./policy.js";
+import { registerApprovalProjection } from "./projection.js";
 
 export const name = "@dsh-plugin/dsh-approve-for-me";
 
@@ -907,4 +908,8 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
   ctx.logger.info(
     `[approve-for-me] loaded (mode=${mode}, grantMode=${grantMode}, preset="${presetName}", strictPreset="${strictPresetName}"${mode === "review" ? `, reviewer=${reviewModelLabel}, fallback=${config.reviewFallback ?? "deny"}` : ""})`,
   );
+
+  // Expose the live approval status to the browser half via the
+  // `approvalStatus` per-session projection (approved/declined status bar).
+  registerApprovalProjection((services, callback) => ctx.inject(services, callback));
 }

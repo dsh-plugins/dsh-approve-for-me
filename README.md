@@ -16,7 +16,9 @@
 > 自动审查模型并非完美，可能出现误判或遗漏。请勿将其视为安全保证；对于高风险、破坏性或涉及敏感数据的操作，应保留人工审查和最小权限控制。
 
 > [!IMPORTANT]
-> 此插件需要搭配前端插件 [@dsh-plugin/dsh-approve-for-me-client](https://github.com/dsh-plugins/dsh-approve-for-me-client) 使用，才能提供完整的界面端功能。
+> 本包为**单包一体化**：不仅包含 Host 侧的自动审核逻辑，还随包提供浏览器端（Web GUI）的实时审查状态条
+> （`./client` 子路径 + `dsh.client` 元数据）。安装 `@dsh-plugin/dsh-approve-for-me` 即同时获得主机与界面功能，
+> 无需再单独安装前端插件。
 
 DSH（DeepSeek Harness）插件：提供类似 Codex 的运行命令自动审核功能，并在沙箱权限选项中新增
 **“替我同意 / Approve For Me”**。

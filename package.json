@@ -1,7 +1,7 @@
 {
   "name": "@dsh-plugin/dsh-approve-for-me",
   "version": "0.2.0",
-  "description": "DSH plugin: codex-like auto-approval for run commands — rules, full-auto, or a lightweight reviewer model (codex guardian style) — plus an \"Approve For Me\" (替我同意) option in the sandbox permission choices.",
+  "description": "DSH plugin: codex-like auto-approval for run commands — rules, full-auto, or a lightweight reviewer model (codex guardian style) — plus an \"Approve For Me\" (替我同意) option in the sandbox permission choices, with a live review status bar in the Web GUI.",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -12,9 +12,33 @@
   "publishConfig": {
     "access": "public"
   },
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/client.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "conversationEvents",
+        "slots"
+      ]
+    }
+  },
   "files": [
     "lib",
     "src",
+    "cordis.patch.yml",
     "README.md"
   ],
   "license": "MIT",
@@ -22,7 +46,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build:client": "node scripts/build-client.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",
     "prepack": "npm run build",
     "test": "node --test test/"
   },
@@ -34,18 +59,24 @@
     "approval",
     "sandbox"
   ],
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/react": "^18.3.31",
     "typescript": "^5.7.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-permission-presets": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-sandbox": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-sandbox-policy": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-user-approval": "^0.1.0-rc.6",
-    "@deepseek-ai/schemastery": "^3.18.1"
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "react": "^18.2.0"
   }
 }

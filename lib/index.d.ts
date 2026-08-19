@@ -73,7 +73,7 @@ export declare const Config: z<Schemastery.ObjectS<{
      * A session running the `approve-for-me` permission preset behaves like
      * `full-auto` under the rule-based modes (the user's explicit 替我同意 choice).
      */
-    mode: z<"off" | "auto" | "full-auto" | "never" | "review", "off" | "auto" | "full-auto" | "never" | "review">;
+    mode: z<"review" | "off" | "auto" | "full-auto" | "never", "review" | "off" | "auto" | "full-auto" | "never">;
     /** Regex sources matched (case-insensitive) in `auto` mode against tool name + reason + command text. */
     approve: z<string[], string[]>;
     /** Regex sources that force a rejection in `auto` mode; deny wins over approve. */
@@ -85,13 +85,13 @@ export declare const Config: z<Schemastery.ObjectS<{
     /** The sandbox baseline selected by `approve-for-me`; escalations must stay strictly wider than this mode. */
     presetSandbox: z<"workspace-write" | "danger-full-access", "workspace-write" | "danger-full-access">;
     /** The approval-policy knob the preset records (`ask` keeps the model-facing "ask" sentence; the answerer auto-approves anyway). */
-    presetApproval: z<"never" | "ask", "never" | "ask">;
+    presetApproval: z<"ask" | "never", "ask" | "never">;
     /** The permission-preset key that enables review before every tool call. */
     strictPresetName: z<string, string>;
     /** The sandbox baseline selected by the Strict Mode preset. */
     strictPresetSandbox: z<"workspace-write" | "danger-full-access", "workspace-write" | "danger-full-access">;
     /** The approval-policy knob recorded by the Strict Mode preset. */
-    strictPresetApproval: z<"never" | "ask", "never" | "ask">;
+    strictPresetApproval: z<"ask" | "never", "ask" | "never">;
     /** Provider route for the reviewer; falls back to the requesting agent's provider. */
     reviewProvider: z<string, string>;
     /** Model id for the reviewer; falls back to the requesting agent's model. Prefer a cheap/fast model. */
@@ -103,7 +103,7 @@ export declare const Config: z<Schemastery.ObjectS<{
     /** How many attempts at a parseable verdict before failing closed. */
     reviewMaxAttempts: z<number, number>;
     /** What to do when the reviewer fails/times out: `deny` (fail closed, default) or `ask` (hand to the human). */
-    reviewFallback: z<"deny" | "ask", "deny" | "ask">;
+    reviewFallback: z<"ask" | "deny", "ask" | "deny">;
     /** Consecutive reviewer denials in one turn that trip the circuit breaker (control returns to the human). */
     reviewCircuitMaxConsecutive: z<number, number>;
     /** Reviewer denials within the recent window that trip the circuit breaker. */
@@ -122,7 +122,7 @@ export declare const Config: z<Schemastery.ObjectS<{
      * A session running the `approve-for-me` permission preset behaves like
      * `full-auto` under the rule-based modes (the user's explicit 替我同意 choice).
      */
-    mode: z<"off" | "auto" | "full-auto" | "never" | "review", "off" | "auto" | "full-auto" | "never" | "review">;
+    mode: z<"review" | "off" | "auto" | "full-auto" | "never", "review" | "off" | "auto" | "full-auto" | "never">;
     /** Regex sources matched (case-insensitive) in `auto` mode against tool name + reason + command text. */
     approve: z<string[], string[]>;
     /** Regex sources that force a rejection in `auto` mode; deny wins over approve. */
@@ -134,13 +134,13 @@ export declare const Config: z<Schemastery.ObjectS<{
     /** The sandbox baseline selected by `approve-for-me`; escalations must stay strictly wider than this mode. */
     presetSandbox: z<"workspace-write" | "danger-full-access", "workspace-write" | "danger-full-access">;
     /** The approval-policy knob the preset records (`ask` keeps the model-facing "ask" sentence; the answerer auto-approves anyway). */
-    presetApproval: z<"never" | "ask", "never" | "ask">;
+    presetApproval: z<"ask" | "never", "ask" | "never">;
     /** The permission-preset key that enables review before every tool call. */
     strictPresetName: z<string, string>;
     /** The sandbox baseline selected by the Strict Mode preset. */
     strictPresetSandbox: z<"workspace-write" | "danger-full-access", "workspace-write" | "danger-full-access">;
     /** The approval-policy knob recorded by the Strict Mode preset. */
-    strictPresetApproval: z<"never" | "ask", "never" | "ask">;
+    strictPresetApproval: z<"ask" | "never", "ask" | "never">;
     /** Provider route for the reviewer; falls back to the requesting agent's provider. */
     reviewProvider: z<string, string>;
     /** Model id for the reviewer; falls back to the requesting agent's model. Prefer a cheap/fast model. */
@@ -152,7 +152,7 @@ export declare const Config: z<Schemastery.ObjectS<{
     /** How many attempts at a parseable verdict before failing closed. */
     reviewMaxAttempts: z<number, number>;
     /** What to do when the reviewer fails/times out: `deny` (fail closed, default) or `ask` (hand to the human). */
-    reviewFallback: z<"deny" | "ask", "deny" | "ask">;
+    reviewFallback: z<"ask" | "deny", "ask" | "deny">;
     /** Consecutive reviewer denials in one turn that trip the circuit breaker (control returns to the human). */
     reviewCircuitMaxConsecutive: z<number, number>;
     /** Reviewer denials within the recent window that trip the circuit breaker. */
