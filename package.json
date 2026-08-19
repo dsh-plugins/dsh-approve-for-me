@@ -5,6 +5,13 @@
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dsh-plugins/dsh-approve-for-me.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "lib",
     "src",
@@ -16,6 +23,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
     "test": "node --test test/"
   },
   "keywords": [

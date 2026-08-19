@@ -1,5 +1,17 @@
 # @dsh-plugin/dsh-approve-for-me
 
+<p align="center">
+  <a href="https://github.com/dsh-plugins/dsh-approve-for-me/actions/workflows/npm-publish.yml">
+    <img src="https://github.com/dsh-plugins/dsh-approve-for-me/actions/workflows/npm-publish.yml/badge.svg" alt="Build Status">
+  </a>
+  <a href="https://www.npmjs.com/package/@dsh-plugin/dsh-approve-for-me">
+    <img src="https://img.shields.io/npm/v/@dsh-plugin/dsh-approve-for-me.svg?sanitize=true" alt="Version">
+  </a>
+  <a href="https://www.npmjs.com/package/@dsh-plugin/dsh-approve-for-me">
+    <img src="https://img.shields.io/npm/l/@dsh-plugin/dsh-approve-for-me.svg?sanitize=true" alt="License">
+  </a>
+</p>
+
 > [!WARNING]
 > 自动审查模型并非完美，可能出现误判或遗漏。请勿将其视为安全保证；对于高风险、破坏性或涉及敏感数据的操作，应保留人工审查和最小权限控制。
 
