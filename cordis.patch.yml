@@ -1,15 +1,51 @@
 # The dsh-approve-for-me bundle patch: inserts this plugin into the profile
-# entry list. Declared by `dsh.bundle.patch` in package.json, so `dsh plugin
-# add` reconciles the package into `dsh.profile.bundles` and the profile boot
+# entry list AND extends the permission-presets table with its two presets.
+# Declared by `dsh.bundle.patch` in package.json, so `dsh plugin add`
+# reconciles the package into `dsh.profile.bundles` and the profile boot
 # applies this layer automatically — no manual cordis.patch.yml edit needed.
 #
-# The patch applies over an empty entry list (bundle layers compose before the
-# profile's own cordis.patch.yml), so it is a bare `insert`. Rows the profile
-# layer adds afterwards can still target this entry by its stable id.
+# Two patch entries, applied in order at boot:
+#
+# 1. `insert` — add this plugin's own row (bundle layers compose before the
+#    profile's own cordis.patch.yml). Stable id so later layers can
+#    patch/disable this row by id. The browser half (./client) loads
+#    automatically through the dsh.client metadata.
+#
+# 2. id-targeted `permission` override — the @deepseek-ai/dsh-permission-presets
+#    service builds its settings dropdown options (schemastery enum) from this
+#    row's `presets` config at startup and does NOT merge row configs (a patch
+#    replaces the whole `config`; unchanged fields must be restated). The
+#    dsh-base bundle declares this row with the three stock presets; this
+#    later bundle layer restates the full table, adding `approve-for-me` and
+#    `strict-review` **before** `danger-full-access` (Full Access) so they
+#    appear ahead of it in the permission menu. This bundle only re-declares
+#    the row; the service itself is unchanged.
 - insert:
-    # Stable id so later layers can patch/disable this row by id. The browser
-    # half (./client) loads automatically through the dsh.client metadata.
     - id: approve-for-me
       name: '@dsh-plugin/dsh-approve-for-me'
       config:
         mode: off
+
+- id: permission
+  name: '@deepseek-ai/dsh-permission-presets'
+  config:
+    presets:
+      read-only:
+        sandbox: read-only
+        approval: ask
+      workspace-write:
+        sandbox: workspace-write
+        approval: ask
+      approve-for-me:
+        sandbox: workspace-write
+        approval: ask
+        name: Approve For Me
+        description: Review each permission escalation automatically.
+      strict-review:
+        sandbox: workspace-write
+        approval: ask
+        name: Approve For Me - Strict Mode
+        description: Review every tool call automatically before it executes.
+      danger-full-access:
+        sandbox: danger-full-access
+        approval: never

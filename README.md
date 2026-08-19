@@ -67,7 +67,7 @@ DSH（DeepSeek Harness）插件：提供类似 Codex 的运行命令自动审核
 
 ### 4. 权限预设 `approve-for-me` 与 `strict-review`（GUI 可见）
 
-`permissionPresets` 在服务初始化时建立下拉选项，因此 profile 必须在启动时完整替换 `permission` 行（行配置不合并），保留原有三个选项并加入第四项：
+`permissionPresets` 在服务初始化时建立下拉选项（schemastery enum），且 profile 行配置不合并（id 定位的 patch 替换整行 `config`）。本插件的 bundle patch（`cordis.patch.yml`）现已自带一条 `permission` 行覆盖：安装本插件即自动把 `approve-for-me` 与 `strict-review` 写入预设表，无需手动改 profile 的 `cordis.patch.yml`。覆盖行按「放在 Full Access 之前」排列，并把基础三个预设一并重述（因为行配置不合并）:
 
 ```yaml
 - id: permission
@@ -80,9 +80,6 @@ DSH（DeepSeek Harness）插件：提供类似 Codex 的运行命令自动审核
       workspace-write:
         sandbox: workspace-write
         approval: ask
-      danger-full-access:
-        sandbox: danger-full-access
-        approval: never
       approve-for-me:
         sandbox: workspace-write
         approval: ask
@@ -93,7 +90,14 @@ DSH（DeepSeek Harness）插件：提供类似 Codex 的运行命令自动审核
         approval: ask
         name: Approve For Me - Strict Mode
         description: Review every tool call automatically before it executes.
+      danger-full-access:
+        sandbox: danger-full-access
+        approval: never
 ```
+
+> 若因部署需要而由 profile 覆盖该行（例如在 `dsh-base` 之外另增/调整预设），请整行重述并保留本插件的两个预设（见上），行配置不会自动合并。
+>
+> 注意：本插件 `apply()` 里的运行时写表只让**会话内** `/permission` 弹窗看到新预设；**设置页下拉框**必须依赖上面的行配置（自动生效）。
 
 - Web GUI 的沙箱权限下拉框出现 **“替我同意 / Approve For Me”** 与 **“Approve For Me - Strict Mode”**；
 - 可用 `/permission approve-for-me` 或 `/permission strict-review` 切换，也可通过 `permissionPresets.set`（UI）切换；

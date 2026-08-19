@@ -1,6 +1,6 @@
 {
   "name": "@dsh-plugin/dsh-approve-for-me",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "DSH plugin: codex-like auto-approval for run commands — rules, full-auto, or a lightweight reviewer model (codex guardian style) — plus an \"Approve For Me\" (替我同意) option in the sandbox permission choices, with a live review status bar in the Web GUI.",
   "type": "module",
   "main": "lib/index.js",
