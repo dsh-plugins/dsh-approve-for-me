@@ -9,30 +9,106 @@ function makeCtx(defs, overrides = {}) {
   const logged = [];
   const promptSections = [];
   const presets = {};
+  const disposers = [];
+  const escalationTargets = [];
+
+  /**
+   * Stand-in for `ctx.dshLoader`.
+   *
+   * The plugin no longer reaches dsh internals itself — it goes through the
+   * loader facade — so the harness models the facade instead of the internals.
+   * Each stub reproduces the contract the real facade documents:
+   *
+   *  - `tools.patchAll` walks the registered definitions and hands each to the
+   *    patcher AT MOST ONCE per id (the real one uses a Symbol marker on the
+   *    definition; here the single pass is equivalent) and replays on
+   *    `tools/change`, which is what makes load order irrelevant;
+   *  - `sandbox.addEscalationTarget` is idempotent and returns a disposer;
+   *  - `permissionPresets.define` never overwrites an existing key;
+   *  - `permissionPresets.effective` folds the last `permission/preset` event,
+   *    matching what dsh's `effectivePermissionPreset` derives.
+   */
+  const dshLoader = {
+    registry: {
+      tools: {
+        patchAll: (patcher, options) => {
+          const seen = new WeakSet();
+          const run = () => {
+            for (const def of defs.values()) {
+              if (seen.has(def)) continue;
+              seen.add(def);
+              patcher(def);
+            }
+          };
+          run();
+          if (!listeners.has("tools/change")) listeners.set("tools/change", []);
+          listeners.get("tools/change").push(run);
+          void options;
+          return () => {};
+        },
+        list: () => [...defs.values()],
+        get: (toolName) => [...defs.values()].find((d) => d.name === toolName)
+      },
+      sandbox: {
+        escalationTargets: () => escalationTargets,
+        addEscalationTarget: (mode) => {
+          if (!escalationTargets.includes(mode)) escalationTargets.push(mode);
+          return () => {
+            const at = escalationTargets.indexOf(mode);
+            if (at >= 0) escalationTargets.splice(at, 1);
+          };
+        }
+      },
+      permissionPresets: {
+        table: () => presets,
+        define: (key, preset) => {
+          if (Object.hasOwn(presets, key)) return () => {};
+          presets[key] = preset;
+          return () => {
+            if (presets[key] === preset) delete presets[key];
+          };
+        },
+        effective: (events) => {
+          for (let i = events.length - 1; i >= 0; i -= 1) {
+            const event = events[i];
+            if (event?.type === "permission/preset") return event.data?.preset;
+          }
+          return undefined;
+        }
+      }
+    },
+    llm: {
+      // dsh freezes published messages; the shape is all the plugin relies on.
+      createUserMessage: (input) => Object.freeze({ id: "msg-1", role: "user", ...input })
+    }
+  };
+
   return {
     defs,
     listeners,
     logged,
     promptSections,
     presets,
+    disposers,
+    escalationTargets,
+    dshLoader,
     llm: overrides.llm,
-    tools: {
-      layers: {
-        global: {
-          tools: {
-            values: () => defs.values()
-          }
-        }
-      }
-    },
     logger: { info: (...args) => logged.push(args.join(" ")), warn: (...args) => logged.push(`WARN ${args.join(" ")}`) },
     on: (event, listener) => {
       if (!listeners.has(event)) listeners.set(event, []);
       listeners.get(event).push(listener);
     },
+    effect: (fn) => {
+      const dispose = fn();
+      if (typeof dispose === "function") disposers.push(dispose);
+      return () => {
+        if (typeof dispose === "function") dispose();
+      };
+    },
     get: (service) => {
       if (service === "permissionPresets") return { presets };
       if (service === "llm") return overrides.llm;
+      if (service === "dshLoader") return dshLoader;
       return undefined;
     },
     inject: (services, callback) => {
@@ -109,7 +185,9 @@ function sessionEvents(callId, command) {
 
 test("plugin contract exports are present", () => {
   assert.equal(name, "@dsh-plugin/dsh-approve-for-me");
-  assert.deepEqual(inject, ["tools", "systemPrompt"]);
+  // `dshLoader` comes first: every dsh intrusion this plugin performs now goes
+  // through the loader facade, so cordis must activate the loader before us.
+  assert.deepEqual(inject, ["dshLoader", "tools", "systemPrompt"]);
   assert.equal(typeof apply, "function");
   assert.equal(typeof Config, "function");
 });

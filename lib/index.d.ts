@@ -56,7 +56,7 @@
  *   `approveEscalation` path, just with the human step answered for them
  *   (by rules, by blanket approval, or by a lightweight reviewer model).
  */
-import z from "@deepseek-ai/schemastery";
+import z from "schemastery";
 import { type GrantMode, type Mode } from "./policy.js";
 export declare const name = "@dsh-plugin/dsh-approve-for-me";
 export declare const inject: string[];
@@ -182,21 +182,6 @@ export interface ApproveForMeConfig {
     reviewCircuitMaxRecent?: number;
     reviewNotify?: boolean;
 }
-/** The sandbox-permission spec embedded in escalation tool parameters. */
-interface SandboxPermissionSpec {
-    enum?: string[];
-    description?: string;
-    [key: string]: unknown;
-}
-/** A live `ToolDefinition` as held by the tools registry. */
-interface ToolDefinition {
-    name?: string;
-    parameters?: {
-        sandbox_permissions?: SandboxPermissionSpec;
-    };
-    execute?: (args: Record<string, unknown>, exec: unknown) => Promise<unknown>;
-    [key: string | symbol]: unknown;
-}
 /** A minimal view of one session event. */
 export interface SessionEvent {
     type: string;
@@ -267,16 +252,11 @@ export interface PluginContext {
     on(event: string, listener: (...args: any[]) => any, options?: Record<string, unknown>): void;
     inject(services: readonly string[], callback: (scope: any) => void): void;
     emit(event: string, ...args: unknown[]): void;
+    /** Revocable side-effect registration; every loader-facade registration rides one. */
+    effect(fn: () => void | (() => void), label?: string): unknown;
     logger: {
         info(...args: unknown[]): void;
         warn(...args: unknown[]): void;
-    };
-    tools?: {
-        layers?: {
-            global?: {
-                tools?: Map<string, ToolDefinition>;
-            };
-        };
     };
     llm?: LlmService;
     systemPrompt?: unknown;

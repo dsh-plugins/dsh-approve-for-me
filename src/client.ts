@@ -28,8 +28,16 @@ loader.load({
       jsx: (type: unknown, props: Record<string, unknown> | null) => unknown;
       jsxs: (type: unknown, props: Record<string, unknown> | null) => unknown;
     };
-    const uiPrimitives = require("@deepseek-ai/dsh-client-ui-primitives") as {
-      IconApiOutline14: (props: { size: number }) => unknown;
+    /**
+     * dsh-loader 的 UI 套件。
+     *
+     * 取 `@dsh-plugin/dsh-loader/client`：DSH 客户端模块表在查表前只剥掉
+     * `/client` 后缀，于是该 specifier 直接命中 dsh-loader 已注册的工厂并递归物化，
+     * 顺序安全且无需别名。图标改用 loader 的策划集（`Icon` + 意图命名），
+     * 不再依赖 `@deepseek-ai/dsh-client-ui-primitives` 的具体图标导出名。
+     */
+    const ui = require("@dsh-plugin/dsh-loader/client") as {
+      Icon: (props: { name: string; size?: number }) => unknown;
       [key: string]: unknown;
     };
 
@@ -132,7 +140,7 @@ loader.load({
         children: [
           jsxRuntime.jsx("span", {
             className: "afmLeading",
-            children: jsxRuntime.jsx(uiPrimitives.IconApiOutline14, { size: 14 }),
+            children: jsxRuntime.jsx(ui.Icon, { name: "Config", size: 14 }),
           }),
           jsxRuntime.jsx("span", { className: "afmTitle", children: toolTitle(status.toolName) }),
           jsxRuntime.jsx("span", { className: "afmSep", "aria-hidden": true }),

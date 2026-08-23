@@ -39,7 +39,9 @@ function captureClientPlugin() {
         jsxs: (type, props) => ({ type, props })
       };
     }
-    if (name === "@deepseek-ai/dsh-client-ui-primitives") return { IconApiOutline14: () => null };
+    // The browser half now takes its icon from the dshloader UI kit instead of
+    // importing a specific @deepseek-ai/dsh-client-ui-primitives export name.
+    if (name === "@dsh-plugin/dsh-loader/client") return { Icon: () => null };
     throw new Error(`unexpected browser dependency: ${name}`);
   };
   runInNewContext(readFileSync(new URL("../lib/client.js", import.meta.url), "utf8"), {

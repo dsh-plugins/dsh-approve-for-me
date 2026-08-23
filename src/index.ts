@@ -56,10 +56,7 @@
  *   `approveEscalation` path, just with the human step answered for them
  *   (by rules, by blanket approval, or by a lightweight reviewer model).
  */
-import z from "@deepseek-ai/schemastery";
-import { createUserMessage } from "@deepseek-ai/dsh-llm";
-import { ESCALATION_TARGETS } from "@deepseek-ai/dsh-sandbox";
-import { effectivePermissionPreset } from "@deepseek-ai/dsh-permission-presets";
+import z from "schemastery";
 import {
   APPROVE_FOR_ME_MARKER,
   APPROVE_FOR_ME_MODE,
@@ -86,7 +83,32 @@ import { registerApprovalProjection } from "./projection.js";
 
 export const name = "@dsh-plugin/dsh-approve-for-me";
 
-export const inject = ["tools", "systemPrompt"];
+/**
+ * `ctx.dshLoader` 的最小视图。
+ *
+ * 本插件对 dsh 的三处侵入（改写已注册工具定义、向 readonly `ESCALATION_TARGETS`
+ * 追加模式、直写 `permissionPresets` 活表）以及 `createUserMessage` 这个模块级
+ * 导出，现在全部经 loader 门面访问，宿主半区不再 import 任何 `@deepseek-ai/*` 值。
+ */
+interface DshLoaderHostApi {
+  registry: {
+    tools: {
+      patchAll(patcher: (def: ToolDefinition) => void, options: { id: string }): () => void;
+    };
+    sandbox: {
+      addEscalationTarget(mode: string): () => void;
+    };
+    permissionPresets: {
+      define(key: string, preset: PermissionPreset): () => void;
+      effective(events: readonly unknown[]): string | undefined;
+    };
+  };
+  llm: {
+    createUserMessage(input: unknown): unknown;
+  };
+}
+
+export const inject = ["dshLoader", "tools", "systemPrompt"];
 
 // `hook/*` are known log-only DSH events, which lets plugin display metadata
 // survive reload in a harness that does not have plugin event registration.
@@ -275,8 +297,9 @@ export interface PluginContext {
   on(event: string, listener: (...args: any[]) => any, options?: Record<string, unknown>): void;
   inject(services: readonly string[], callback: (scope: any) => void): void;
   emit(event: string, ...args: unknown[]): void;
+  /** Revocable side-effect registration; every loader-facade registration rides one. */
+  effect(fn: () => void | (() => void), label?: string): unknown;
   logger: { info(...args: unknown[]): void; warn(...args: unknown[]): void };
-  tools?: { layers?: { global?: { tools?: Map<string, ToolDefinition> } } };
   llm?: LlmService;
   systemPrompt?: unknown;
   [key: string]: unknown;
@@ -330,6 +353,7 @@ function currentTurn(events: readonly SessionEvent[]): number {
 }
 
 export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void {
+  const loader = (ctx as PluginContext & { dshLoader: DshLoaderHostApi }).dshLoader;
   const mode = config.mode ?? "off";
   const grantMode = config.grantMode ?? "danger-full-access";
   const presetName = config.presetName ?? "approve-for-me";
@@ -346,17 +370,14 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
   };
 
   // Advertise the option for any escalation tool that loads AFTER this plugin.
-  // `ESCALATION_TARGETS` is shipped readonly; the marker mode is appended at
-  // runtime exactly as the JS version did, so the live registry advertises it.
-  if (!ESCALATION_TARGETS.includes(APPROVE_FOR_ME_MODE as never)) {
-    (ESCALATION_TARGETS as string[]).push(APPROVE_FOR_ME_MODE);
-  }
+  // `ESCALATION_TARGETS` is shipped readonly and appending to it is exactly the
+  // kind of intrusion the loader facade exists to absorb: it keeps the append
+  // idempotent and hands back a disposer, so the mode disappears with the fiber.
+  ctx.effect(() => loader.registry.sandbox.addEscalationTarget(APPROVE_FOR_ME_MODE));
 
   /** Fold the session's effective auto-approval stance. */
   const resolveState = (session: Session): { mode: Mode; presetActive: boolean; strictActive: boolean } => {
-    // The DSH permission-preset helper expects the runtime's own event type;
-    // our minimal view is structurally compatible, so relax at the boundary.
-    const preset = effectivePermissionPreset(session.events as never);
+    const preset = loader.registry.permissionPresets.effective(session.events);
     return {
       mode,
       presetActive: presetName !== "" && preset === presetName,
@@ -386,20 +407,18 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
 
   /**
    * Patch every escalation tool already registered, and any registered later.
-   * Reaches `ctx.tools.layers.global.tools` — TS-private registry internals
-   * (`ToolRuntime.layers` / `ScopedLayers.global` / `ToolLayer.tools`), walked
-   * deliberately because rc.6 exposes no public "replace a registered tool"
-   * API. Guarded with optional chaining: if the layout ever changes, this
-   * degrades to a no-op instead of crashing, and only the schema enum + the
-   * execute wrap are lost.
+   *
+   * The private-registry walk (`ctx.tools.layers.global.tools`), the
+   * once-per-definition idempotence marker, the `tools/change` replay that makes
+   * load order irrelevant, and the degrade-to-no-op guard for a layout change all
+   * live in `loader.registry.tools.patchAll` now — this plugin only says WHAT to
+   * change on a definition.
    */
-  const patchAll = (): void => {
-    const table = ctx.tools?.layers?.global?.tools;
-    if (table === undefined) return;
-    for (const def of table.values()) patchTool(def, grantMode);
-  };
-  patchAll();
-  ctx.on("tools/change", () => patchAll(), { prepend: true });
+  ctx.effect(() =>
+    loader.registry.tools.patchAll((def) => patchTool(def, grantMode), {
+      id: "approve-for-me:escalation",
+    }),
+  );
 
   /** Recover the exact command text of the tool call under approval, when logged. */
   const commandTextFor = (session: Session, callId: string | undefined): string => {
@@ -520,7 +539,7 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
     if (!reviewNotify) return;
     try {
       agent.inject?.(
-        createUserMessage({
+        loader.llm.createUserMessage({
           content: [{ type: "text", text: text ?? summary }],
           source: { kind: "plugin", plugin: name, form: "notice", summary },
         }),
@@ -583,7 +602,7 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
       actionJson,
     });
     const system = renderReviewSystemPrompt(config.reviewPolicy);
-    const message = createUserMessage({
+    const message = loader.llm.createUserMessage({
       content: [{ type: "text", text: userText }],
       source: { kind: "plugin", plugin: name },
     });
@@ -842,32 +861,29 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
     { prepend: true },
   );
 
-  // Register the "Approve For Me" permission preset so the Web GUI sandbox
-  // permission selector and the `/permission` command offer it.
-  const presets = ctx.get<PermissionPresetTable>("permissionPresets");
-  if (presets !== undefined && presets.presets !== undefined && !Object.hasOwn(presets.presets, presetName)) {
-    presets.presets[presetName] = {
+  // Register the "Approve For Me" permission presets so the Web GUI sandbox
+  // permission selector and the `/permission` command offer them.
+  //
+  // `define` owns the "never overwrite an existing key" rule (a cordis.patch.yml
+  // layer that already declared the row wins) and returns a disposer that removes
+  // only a preset this call actually added.
+  ctx.effect(() =>
+    loader.registry.permissionPresets.define(presetName, {
       sandbox: config.presetSandbox ?? "workspace-write",
       approval: config.presetApproval ?? "ask",
       name: "替我同意 / Approve For Me",
       description: "Auto-approve sandbox escalations and approval prompts on the user's behalf (Approve For Me).",
-    };
-    ctx.logger.info(`[approve-for-me] registered permission preset "${presetName}"`);
-  }
-  if (
-    presets !== undefined &&
-    presets.presets !== undefined &&
-    strictPresetName !== "" &&
-    strictPresetName !== presetName &&
-    !Object.hasOwn(presets.presets, strictPresetName)
-  ) {
-    presets.presets[strictPresetName] = {
-      sandbox: config.strictPresetSandbox ?? "workspace-write",
-      approval: config.strictPresetApproval ?? "ask",
-      name: "Approve For Me - Strict Mode",
-      description: "Review every tool call automatically before it executes.",
-    };
-    ctx.logger.info(`[approve-for-me] registered permission preset "${strictPresetName}"`);
+    }),
+  );
+  if (strictPresetName !== "" && strictPresetName !== presetName) {
+    ctx.effect(() =>
+      loader.registry.permissionPresets.define(strictPresetName, {
+        sandbox: config.strictPresetSandbox ?? "workspace-write",
+        approval: config.strictPresetApproval ?? "ask",
+        name: "Approve For Me - Strict Mode",
+        description: "Review every tool call automatically before it executes.",
+      }),
+    );
   }
 
   // Model-facing statement of the current auto-approval stance.

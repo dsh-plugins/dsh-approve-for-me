@@ -31,7 +31,8 @@
       "platform": "web",
       "inject": [
         "conversationEvents",
-        "slots"
+        "slots",
+        "@dsh-plugin/dsh-loader"
       ]
     }
   },
@@ -49,7 +50,7 @@
     "build:client": "node scripts/build-client.mjs",
     "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",
     "prepack": "npm run build",
-    "test": "node --test test/"
+    "test": "node --test \"test/**/*.test.js\""
   },
   "keywords": [
     "dsh",
@@ -60,23 +61,18 @@
     "sandbox"
   ],
   "dependencies": {
+    "schemastery": "^3.18.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@dsh-plugin/dsh-loader": "file:../dsh-loader",
     "@types/node": "^24.0.0",
     "@types/react": "^18.3.31",
     "typescript": "^5.7.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-permission-presets": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-sandbox": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-sandbox-policy": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-user-approval": "^0.1.0-rc.6",
-    "@deepseek-ai/schemastery": "^3.18.1",
+    "@dsh-plugin/dsh-loader": "^1.1.0",
     "react": "^18.2.0"
   }
 }
