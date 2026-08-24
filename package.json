@@ -1,7 +1,7 @@
 {
   "name": "@dsh-plugin/dsh-approve-for-me",
-  "version": "0.3.0",
-  "description": "DSH plugin: codex-like auto-approval for run commands — rules, full-auto, or a lightweight reviewer model (codex guardian style) — plus an \"Approve For Me\" (替我同意) option in the sandbox permission choices, with a live review status bar in the Web GUI.",
+  "version": "0.4.0",
+  "description": "DSH plugin: codex-like auto-approval for run commands 鈥?rules, full-auto, or a lightweight reviewer model (codex guardian style) 鈥?plus an \"Approve For Me\" (鏇挎垜鍚屾剰) option in the sandbox permission choices, with a live review status bar in the Web GUI.",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -72,7 +72,7 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@dsh-plugin/dsh-loader": "^1.1.0",
+    "@dsh-plugin/dsh-loader": "^1.2.0",
     "react": "^18.2.0"
   }
 }
