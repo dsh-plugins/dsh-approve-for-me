@@ -28,12 +28,12 @@ declare const approvalStatusSchema: z.ZodObject<{
         callId: z.ZodNullable<z.ZodString>;
         startedAt: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
-        callId: string | null;
         toolName: string;
+        callId: string | null;
         startedAt: number;
     }, {
-        callId: string | null;
         toolName: string;
+        callId: string | null;
         startedAt: number;
     }>>;
     last: z.ZodNullable<z.ZodObject<{
@@ -41,35 +41,35 @@ declare const approvalStatusSchema: z.ZodObject<{
         toolName: z.ZodNullable<z.ZodString>;
         at: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
+        at: number;
         toolName: string | null;
         outcome: string;
-        at: number;
     }, {
+        at: number;
         toolName: string | null;
         outcome: string;
-        at: number;
     }>>;
 }, "strip", z.ZodTypeAny, {
     pending: {
-        callId: string | null;
         toolName: string;
+        callId: string | null;
         startedAt: number;
     } | null;
     last: {
+        at: number;
         toolName: string | null;
         outcome: string;
-        at: number;
     } | null;
 }, {
     pending: {
-        callId: string | null;
         toolName: string;
+        callId: string | null;
         startedAt: number;
     } | null;
     last: {
+        at: number;
         toolName: string | null;
         outcome: string;
-        at: number;
     } | null;
 }>;
 /** The folded projection state. */
