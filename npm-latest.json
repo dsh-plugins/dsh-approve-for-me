@@ -1,0 +1,10 @@
+{
+  "name": "@dsh-plugin/dsh-approve-for-me",
+  "latest": "0.4.0",
+  "publishedAt": "2026-08-24T15:07:20.686Z",
+  "dist": {
+    "tarball": "https://registry.npmjs.org/@dsh-plugin/dsh-approve-for-me/-/dsh-approve-for-me-0.4.0.tgz",
+    "integrity": "sha512-eR+i0GNUWTUhnBDKFrm1NIAmkT2H7cajr6fI5Cqfd77QzhtccSrbWTY2BnJufnK+CLQsLCJ15o32ZW3RZQTmsw==",
+    "unpackedSize": 229076
+  }
+}
