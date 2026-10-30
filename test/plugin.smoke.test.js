@@ -1,7 +1,8 @@
+import { createPatchAPI } from '@dsh-plugin/dsh-loader/patch';
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { APPROVE_FOR_ME_MARKER, APPROVE_FOR_ME_MODE } from "../lib/policy.js";
-import { Config, apply, inject, name } from "../lib/index.js";
+import { Config, applyPolicy as apply, apply as applyWithConfig, inject, name } from "../lib/index.js";
 
 /** Minimal cordis-shaped context covering everything apply() touches. */
 function makeCtx(defs, overrides = {}) {
@@ -29,6 +30,7 @@ function makeCtx(defs, overrides = {}) {
    *    matching what dsh's `effectivePermissionPreset` derives.
    */
   const dshLoader = {
+    patch: createPatchAPI(),
     registry: {
       tools: {
         patchAll: (patcher, options) => {
@@ -703,4 +705,51 @@ test("apply registers a system-prompt section describing the mode", () => {
     reviewSection.text({ agent: fakeAgent([{ type: "permission/preset", data: { preset: "strict-review" } }]) }),
     /assesses every tool call/
   );
+});
+
+
+test('policy unload disables execution rewriting and retains a later wrapper', async () => {
+  const {def,calls}=fakePwshDef(); const original=def.execute; const oldEnum=def.parameters.sandbox_permissions.enum;
+  const ctx=makeCtx(new Map([['pwsh',def]])); apply(ctx,Config({grantMode:'workspace-write'}));
+  const installed=def.execute;
+  const thirdParty=async function(...args){return installed.apply(this,args)};
+  def.execute=thirdParty;
+  for(const off of [...ctx.disposers].reverse())off();
+  assert.equal(def.execute,thirdParty);
+  assert.equal(def.parameters.sandbox_permissions.enum,oldEnum);
+  await def.execute({sandbox_permissions:'approve-for-me',justification:'test'},{});
+  assert.equal(calls.at(-1).sandbox_permissions,'approve-for-me');
+  def.execute=original;
+  const again=makeCtx(new Map([['pwsh',def]])); apply(again,Config({grantMode:'danger-full-access'}));
+  await def.execute({sandbox_permissions:'approve-for-me',justification:'test'},{});
+  assert.equal(calls.at(-1).sandbox_permissions,'danger-full-access');
+  for(const off of [...again.disposers].reverse())off();
+  assert.equal(def.execute,original);
+});
+
+
+test('config-api entry binds its owner and replaces the child policy after a change', async()=>{
+  const {def,calls}=fakePwshDef(), original=def.execute;
+  const parent=makeCtx(new Map([['pwsh',def]])); let listener, child;
+  const replace=value=>{
+    for(const off of [...(child?.disposers??[])].reverse())off();
+    child=makeCtx(new Map([['pwsh',def]])); apply(child,value);
+  };
+  parent.dshLoader.config={register:async(owner,template)=>{
+    assert.equal(owner,parent); assert.equal(template.id,'dsh-approve-for-me');
+    return {get:()=>({value:Config({grantMode:'workspace-write'}),revision:0}),watch:fn=>{listener=fn;}};
+  }};
+  parent.plugin=(plugin,value)=>{
+    assert.equal(typeof plugin.apply,'function'); replace(value);
+    parent.effect(()=>()=>{for(const off of [...child.disposers].reverse())off()});
+    return {update:replace};
+  };
+  await applyWithConfig(parent);
+  await def.execute({sandbox_permissions:'approve-for-me',justification:'test'},{});
+  assert.equal(calls.at(-1).sandbox_permissions,'workspace-write');
+  listener({value:Config({grantMode:'danger-full-access'}),revision:1});
+  await def.execute({sandbox_permissions:'approve-for-me',justification:'test'},{});
+  assert.equal(calls.at(-1).sandbox_permissions,'danger-full-access');
+  for(const off of [...parent.disposers].reverse())off();
+  assert.equal(def.execute,original);
 });

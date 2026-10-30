@@ -119,7 +119,13 @@ Explains the current auto-approval mode to the model (off / auto / full-auto / n
 
 ## Configuration
 
-In the dsh profile's `cordis.patch.yml`:
+Requires Node.js 24.9+ and dsh-loader 2.x. Supported dsh release families: `0.1.5`, `0.1.6`, `0.1.7`, `0.2.0`, `0.2.1`, `0.2.2`, including prereleases.
+
+Use the loader's unified form: **Settings → Plugin configuration** before `0.1.6-alpha.2`, or the plugin detail page from that release. The card starts collapsed. Saving replaces the policy scope, releasing its patches, listeners and presets before the updated policy becomes active. Defaults remain `mode: off` and fail-closed review behavior.
+
+Config-api stores values at `<profile>/config/dsh-approve-for-me/config.json`, without `exposeAllNamespaces`. Uninstalling retains the file. Cordis row values can seed initial defaults; an existing file takes precedence. To migrate 1.x, copy your old values into the new form. No files are moved automatically.
+
+The following options show the Cordis bootstrap defaults (the form exposes the same fields):
 
 ```yaml
 approve-for-me:

@@ -1,7 +1,7 @@
 {
   "name": "@dsh-plugin/dsh-approve-for-me",
-  "version": "0.4.1",
-  "description": "DSH plugin: codex-like auto-approval for run commands 鈥?rules, full-auto, or a lightweight reviewer model (codex guardian style) 鈥?plus an \"Approve For Me\" (鏇挎垜鍚屾剰) option in the sandbox permission choices, with a live review status bar in the Web GUI.",
+  "version": "2.0.0",
+  "description": "DSH automatic approval rules and lightweight model review with a live review status bar.",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -30,8 +30,6 @@
     "client": {
       "platform": "web",
       "inject": [
-        "conversationEvents",
-        "slots",
         "@dsh-plugin/dsh-loader"
       ]
     }
@@ -44,7 +42,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=24.9.0"
   },
   "scripts": {
     "build:client": "tsc -p tsconfig.client.json && tsdown --config tsdown.client.config.mjs",
@@ -65,7 +63,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@dsh-plugin/dsh-loader": "^1.3.0",
+    "@dsh-plugin/dsh-loader": "2.0.0-dev.41037890182",
     "@types/node": "^24.0.0",
     "@types/react": "^18.3.31",
     "react": "^18.2.0",
@@ -75,7 +73,7 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@dsh-plugin/dsh-loader": "^1.3.0",
+    "@dsh-plugin/dsh-loader": "^2.0.0-0",
     "react": "^18.2.0"
   }
 }

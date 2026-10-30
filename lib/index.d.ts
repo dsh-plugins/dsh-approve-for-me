@@ -262,5 +262,7 @@ export interface PluginContext {
     systemPrompt?: unknown;
     [key: string]: unknown;
 }
-export declare function apply(ctx: PluginContext, config?: ApproveForMeConfig): void;
+export declare function applyPolicy(ctx: PluginContext, config?: ApproveForMeConfig): void;
+/** Config changes recreate one Cordis child scope, releasing all old policy resources. */
+export declare function apply(ctx: PluginContext, entry?: ApproveForMeConfig): Promise<void>;
 export {};

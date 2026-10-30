@@ -1,3 +1,5 @@
+import type { HostAPI } from '@dsh-plugin/dsh-loader';
+import { createConfigTemplate } from './config-template.js';
 /**
  * @dsh-plugin/dsh-approve-for-me
  *
@@ -90,7 +92,7 @@ export const name = "@dsh-plugin/dsh-approve-for-me";
  * 追加模式、直写 `permissionPresets` 活表）以及 `createUserMessage` 这个模块级
  * 导出，现在全部经 loader 门面访问，宿主半区不再 import 任何 `@deepseek-ai/*` 值。
  */
-interface DshLoaderHostApi {
+interface DshLoaderHostApi extends Pick<HostAPI, 'config' | 'patch'> {
   registry: {
     tools: {
       patchAll(patcher: (def: ToolDefinition) => void, options: { id: string }): () => void;
@@ -192,8 +194,8 @@ export interface ApproveForMeConfig {
   reviewNotify?: boolean;
 }
 
-/** Marker used to avoid double-patching a tool definition (HMR / re-apply safety). */
-const PATCHED = Symbol("approve-for-me:patched");
+/** Each policy scope needs a distinct registry marker after configuration reload. */
+let policyGeneration = 0;
 
 /** The sandbox-permission spec embedded in escalation tool parameters. */
 interface SandboxPermissionSpec {
@@ -312,17 +314,22 @@ export interface PluginContext {
  * @param def - the live `ToolDefinition` held by the registry.
  * @param grantMode - the real mode granted on the user's behalf.
  */
-function patchTool(def: ToolDefinition, grantMode: GrantMode): void {
-  if (def === null || typeof def !== "object" || def[PATCHED]) return;
+function patchTool(def: ToolDefinition, grantMode: GrantMode, loader: DshLoaderHostApi, ctx: PluginContext): void {
+  if (def === null || typeof def !== "object") return;
   const spec = def.parameters?.sandbox_permissions;
   if (spec === undefined || typeof spec !== "object" || !Array.isArray(spec.enum)) return;
+  const oldEnum = spec.enum, oldDescription = spec.description;
   if (!spec.enum.includes(APPROVE_FOR_ME_MODE)) {
     spec.enum = [...spec.enum, APPROVE_FOR_ME_MODE];
     spec.description = `${spec.description ?? ""} \`${APPROVE_FOR_ME_MODE}\` (替我同意 / Approve For Me): auto-approve this escalation on the user's behalf and grant the configured mode without prompting.`;
   }
-  const original = def.execute;
-  if (original === undefined) return;
-  def.execute = async function (
+  const enumValue = spec.enum, descriptionValue = spec.description;
+  ctx.effect(() => () => {
+    if (spec.enum === enumValue) spec.enum = oldEnum;
+    if (spec.description === descriptionValue) spec.description = oldDescription;
+  });
+  if (def.execute === undefined) return;
+  loader.patch.method(def, "execute", original => async function (
     this: ToolDefinition,
     args: Record<string, unknown>,
     exec: unknown,
@@ -331,11 +338,10 @@ function patchTool(def: ToolDefinition, grantMode: GrantMode): void {
       if (typeof args.justification !== "string" || args.justification.trim().length === 0) {
         throw new Error(`invalid escalation: sandbox_permissions "${APPROVE_FOR_ME_MODE}" requires a justification`);
       }
-      return original.call(this, rewriteApproveForMe(args, grantMode), exec);
+      return original!.call(this, rewriteApproveForMe(args, grantMode), exec);
     }
-    return original.call(this, args, exec);
-  };
-  def[PATCHED] = true;
+    return original!.call(this, args, exec);
+  }, { owner: ctx, id: "approve-for-me:execute" });
 }
 
 /** Human-readable error message from any thrown value. */
@@ -352,7 +358,7 @@ function currentTurn(events: readonly SessionEvent[]): number {
   return 0;
 }
 
-export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void {
+export function applyPolicy(ctx: PluginContext, config: ApproveForMeConfig = {}): void {
   const loader = (ctx as PluginContext & { dshLoader: DshLoaderHostApi }).dshLoader;
   const mode = config.mode ?? "off";
   const grantMode = config.grantMode ?? "danger-full-access";
@@ -360,7 +366,7 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
   const strictPresetName = config.strictPresetName ?? "strict-review";
   const approve: CompiledPatterns = compilePatterns(config.approve ?? []);
   const deny: CompiledPatterns = compilePatterns(config.deny ?? []);
-  const reviewModelLabel = config.reviewModel ?? "(agent model)";
+  const reviewModelLabel = config.reviewModel || "(agent model)";
   const reviewNotify = config.reviewNotify ?? false;
   const denialTracker: DenialTracker = createDenialTracker();
   const strictApprovedEscalations = new WeakMap<Session, Set<string>>();
@@ -415,8 +421,8 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
    * change on a definition.
    */
   ctx.effect(() =>
-    loader.registry.tools.patchAll((def) => patchTool(def, grantMode), {
-      id: "approve-for-me:escalation",
+    loader.registry.tools.patchAll((def) => patchTool(def, grantMode, loader, ctx), {
+      id: `approve-for-me:escalation:${++policyGeneration}`,
     }),
   );
 
@@ -574,8 +580,8 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
         break;
       }
     }
-    const provider = config.reviewProvider ?? inheritedProvider;
-    const model = config.reviewModel ?? inheritedModel;
+    const provider = config.reviewProvider || inheritedProvider;
+    const model = config.reviewModel || inheritedModel;
     if (!provider || !model) {
       throw new Error(
         "review mode requires reviewProvider/reviewModel (or a session with a recorded model route); nothing to review with",
@@ -928,4 +934,12 @@ export function apply(ctx: PluginContext, config: ApproveForMeConfig = {}): void
   // Expose the live approval status to the browser half via the
   // `approvalStatus` per-session projection (approved/declined status bar).
   registerApprovalProjection((services, callback) => ctx.inject(services, callback));
+}
+
+/** Config changes recreate one Cordis child scope, releasing all old policy resources. */
+export async function apply(ctx: PluginContext, entry: ApproveForMeConfig = {}): Promise<void> {
+  const loader = ctx.dshLoader as DshLoaderHostApi;
+  const handle = await loader.config.register<ApproveForMeConfig>(ctx, createConfigTemplate(Config(entry)));
+  const fork = (ctx.plugin as (plugin: unknown, config: unknown) => { update(config: unknown): unknown })({ apply: applyPolicy }, handle.get().value);
+  handle.watch(({ value }) => fork.update(value));
 }

@@ -8,3 +8,5 @@ playground/
 # Local debugging artifacts
 _debug_dsh.py
 _session-debug.jsonl
+
+.cache/
