@@ -11,6 +11,7 @@
  * protocol shell. ESM module scope also keeps every declaration off the
  * shared `window` global — no top-level `const` leaks, no IIFE needed.
  */
+import { supportsLegacyApproval } from './compat.js';
 import * as jsxRuntime from "react/jsx-runtime";
 /**
  * dsh-loader 的 UI 套件。
@@ -300,6 +301,7 @@ export const name = "@dsh-plugin/dsh-approve-for-me";
 export const inject = ["conversationEvents", "slots"];
 
 export function apply(ctx: ClientContext): void {
+  if (!supportsLegacyApproval((window as unknown as { __dshLoader__?: { dshVersion?: string } }).__dshLoader__?.dshVersion)) return;
   ctx.conversationEvents.register(approvalStatusDefinition);
   ctx.slots.inject("conversation.chat.node", () =>
     ctx.slots.register(

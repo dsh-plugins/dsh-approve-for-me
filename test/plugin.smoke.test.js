@@ -753,3 +753,12 @@ test('config-api entry binds its owner and replaces the child policy after a cha
   for(const off of [...parent.disposers].reverse())off();
   assert.equal(def.execute,original);
 });
+
+
+test('unsupported new hosts do not install the legacy policy or register config', async()=>{
+  const ctx=makeCtx(new Map());ctx.dshLoader.dshVersion='0.1.7-rc.2';
+  ctx.dshLoader.config={register(){throw new Error('must not register')}};
+  ctx.plugin=()=>{throw new Error('must not start policy')};
+  await applyWithConfig(ctx);
+  assert.equal(ctx.listeners.size,0);assert.match(ctx.logged.join(' '),/dsh-experimental-auto-review/);
+});

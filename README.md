@@ -119,7 +119,7 @@ Explains the current auto-approval mode to the model (off / auto / full-auto / n
 
 ## Configuration
 
-Requires Node.js 24.9+ and dsh-loader 2.x. Supported dsh release families: `0.1.5`, `0.1.6`, `0.1.7`, `0.2.0`, `0.2.1`, `0.2.2`, including prereleases.
+Requires Node.js 24.9+ and dsh-loader 2.x. Supported dsh range: `[0.1.5,0.1.7-rc.2)`. The `0.1.7-rc.2` release itself is excluded: use `@deepseek-ai/dsh-experimental-auto-review` from that release. Uninstall this bundle before switching an upgraded profile to the official plugin. Both host and browser entries skip legacy behavior on unsupported newer hosts. dsh-auxiliary can select a dedicated model for the official reviewer.
 
 Use the loader's unified form: **Settings → Plugin configuration** before `0.1.6-alpha.2`, or the plugin detail page from that release. The card starts collapsed. Saving replaces the policy scope, releasing its patches, listeners and presets before the updated policy becomes active. Defaults remain `mode: off` and fail-closed review behavior.
 

@@ -1,3 +1,4 @@
+import { supportsLegacyApproval } from './compat.js';
 import type { HostAPI } from '@dsh-plugin/dsh-loader';
 import { createConfigTemplate } from './config-template.js';
 /**
@@ -92,7 +93,7 @@ export const name = "@dsh-plugin/dsh-approve-for-me";
  * 追加模式、直写 `permissionPresets` 活表）以及 `createUserMessage` 这个模块级
  * 导出，现在全部经 loader 门面访问，宿主半区不再 import 任何 `@deepseek-ai/*` 值。
  */
-interface DshLoaderHostApi extends Pick<HostAPI, 'config' | 'patch'> {
+interface DshLoaderHostApi extends Pick<HostAPI, 'config' | 'patch' | 'dshVersion'> {
   registry: {
     tools: {
       patchAll(patcher: (def: ToolDefinition) => void, options: { id: string }): () => void;
@@ -939,6 +940,10 @@ export function applyPolicy(ctx: PluginContext, config: ApproveForMeConfig = {})
 /** Config changes recreate one Cordis child scope, releasing all old policy resources. */
 export async function apply(ctx: PluginContext, entry: ApproveForMeConfig = {}): Promise<void> {
   const loader = ctx.dshLoader as DshLoaderHostApi;
+  if (!supportsLegacyApproval(loader.dshVersion)) {
+    ctx.logger.warn('[approve-for-me] dsh >= 0.1.7-rc.2 uses @deepseek-ai/dsh-experimental-auto-review; this plugin is inactive');
+    return;
+  }
   const handle = await loader.config.register<ApproveForMeConfig>(ctx, createConfigTemplate(Config(entry)));
   const fork = (ctx.plugin as (plugin: unknown, config: unknown) => { update(config: unknown): unknown })({ apply: applyPolicy }, handle.get().value);
   handle.watch(({ value }) => fork.update(value));
